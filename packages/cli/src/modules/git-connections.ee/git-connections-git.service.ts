@@ -274,11 +274,7 @@ export class GitConnectionsGitService {
 						`refs/heads/${branchName}`,
 					]);
 					if (!branchRefs.trim()) {
-						const anyRefs = await git.listRemote(['--heads', 'origin']);
-						if (anyRefs.trim()) {
-							throw new BadRequestError(`Remote branch does not exist: ${branchName}`);
-						}
-						return;
+						throw new BadRequestError(`Remote branch does not exist: ${branchName}`);
 					}
 
 					await this.refreshWorkingCopyFromRemote(git, branchName);
@@ -292,8 +288,7 @@ export class GitConnectionsGitService {
 	/**
 	 * Commit on the checked-out branch, push the commit to a new remote branch,
 	 * and pin the local branch back to where it was. Each promote branch is then
-	 * the configured branch plus exactly one commit. An empty remote keeps its
-	 * configured local branch unborn after the push.
+	 * the configured branch plus exactly one commit.
 	 */
 	private async commitAndPushToTargetBranch(
 		git: SimpleGit,
@@ -309,10 +304,12 @@ export class GitConnectionsGitService {
 			stagePathspec: string;
 		},
 	): Promise<{ commitSha: string }> {
-		const preCommitHead =
-			(
-				await git.raw(['for-each-ref', '--format=%(objectname)', `refs/heads/${branchName}`])
-			).trim() || null;
+		const preCommitHead = (
+			await git.raw(['for-each-ref', '--format=%(objectname)', `refs/heads/${branchName}`])
+		).trim();
+		if (!preCommitHead) {
+			throw new BadRequestError(`Local branch does not exist: ${branchName}`);
+		}
 		try {
 			// Scope staging to the export while including removed entities.
 			await git.add(['--all', '--', stagePathspec]);
@@ -332,16 +329,10 @@ export class GitConnectionsGitService {
 			branchName,
 			targetBranchName,
 			preCommitHead,
-		}: { branchName: string; targetBranchName: string; preCommitHead: string | null },
+		}: { branchName: string; targetBranchName: string; preCommitHead: string },
 	): Promise<void> {
 		try {
-			if (preCommitHead) {
-				await git.raw(['reset', '--hard', preCommitHead]);
-				return;
-			}
-
-			await git.raw(['read-tree', '--empty']);
-			await git.raw(['update-ref', '-d', `refs/heads/${branchName}`]);
+			await git.raw(['reset', '--hard', preCommitHead]);
 		} catch {
 			this.logger.warn('Failed to restore Git working copy after promotion', {
 				branchName,

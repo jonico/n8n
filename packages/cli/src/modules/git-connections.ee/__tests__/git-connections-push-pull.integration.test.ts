@@ -251,28 +251,18 @@ describe('Git connection push and pull', () => {
 		expect((await remoteGit.revparse(['refs/heads/main'])).trim()).toBe(mergedMainTip);
 	});
 
-	it('pushes the first promotion when the remote is empty', async () => {
+	it('rejects a promotion when the configured remote branch does not exist', async () => {
 		const bareDir = path.join(testRoot, 'empty-remote.git');
 		await simpleGit().raw(['init', '--bare', bareDir]);
 		const connection = await createConnection(bareDir, { createBranchOnPromotion: true });
 		await service.clone(connection.id);
 
-		const project = await createTeamProject('Orders', owner);
-		await createWorkflow({ name: 'Process order', nodes: [], connections: {} }, project);
-
-		const result = await service.push(connection.id, owner, { commitMessage: 'Promote orders' });
+		await expect(
+			service.push(connection.id, owner, { commitMessage: 'Promote orders' }),
+		).rejects.toThrow('Remote branch does not exist: main');
 		const remoteGit = simpleGit(bareDir);
-		const commitWithParents = (
-			await remoteGit.raw(['rev-list', '--parents', '-n', '1', result.commitSha])
-		)
-			.trim()
-			.split(' ');
 
-		expect((await remoteGit.revparse([`refs/heads/${result.branchName}`])).trim()).toBe(
-			result.commitSha,
-		);
-		expect(commitWithParents).toEqual([result.commitSha]);
-		await expect(remoteGit.raw(['show-ref', '--verify', 'refs/heads/main'])).rejects.toThrow();
+		await expect(remoteGit.raw(['show-ref', '--heads'])).resolves.toBe('');
 	});
 
 	it('pulls the remote snapshot and makes the managed target scope match it', async () => {

@@ -311,14 +311,12 @@ describe('GitConnectionsGitService (git operations)', () => {
 			expect(mockGit.raw).toHaveBeenCalledWith(['reset', '--hard', 'base']);
 		});
 
-		it('restores an unborn branch after the first promotion', async () => {
-			mockGit.revparse.mockResolvedValueOnce('commit\n');
-
-			const result = await call({ targetBranchName: 'n8n-promotion/x' });
-
-			expect(mockGit.raw).toHaveBeenCalledWith(['read-tree', '--empty']);
-			expect(mockGit.raw).toHaveBeenCalledWith(['update-ref', '-d', 'refs/heads/main']);
-			expect(result).toEqual({ commitSha: 'commit' });
+		it('rejects a promotion when the configured local branch does not exist', async () => {
+			await expect(call({ targetBranchName: 'n8n-promotion/x' })).rejects.toThrow(
+				'Local branch does not exist: main',
+			);
+			expect(mockGit.commit).not.toHaveBeenCalled();
+			expect(mockGit.push).not.toHaveBeenCalled();
 		});
 
 		it('keeps a successful push result when restoring the local branch fails', async () => {
@@ -389,22 +387,13 @@ describe('GitConnectionsGitService (git operations)', () => {
 			expect(mockGit.raw).toHaveBeenCalledWith(['reset', '--hard', 'origin/main']);
 		});
 
-		it('keeps the configured branch unborn when the remote is empty', async () => {
+		it('rejects a missing configured branch when the remote is empty', async () => {
 			mockGit.listRemote.mockResolvedValue('');
 
-			await call();
+			await expect(call()).rejects.toThrow('Remote branch does not exist: main');
 
 			expect(mockGit.fetch).not.toHaveBeenCalled();
 			expect(mockGit.raw).not.toHaveBeenCalledWith(['reset', '--hard', 'origin/main']);
-		});
-
-		it('rejects a missing configured branch on a non-empty remote', async () => {
-			mockGit.listRemote
-				.mockResolvedValueOnce('')
-				.mockResolvedValueOnce('def456\trefs/heads/develop\n');
-
-			await expect(call()).rejects.toThrow('Remote branch does not exist: main');
-			expect(mockGit.fetch).not.toHaveBeenCalled();
 		});
 	});
 
