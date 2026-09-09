@@ -214,7 +214,9 @@ follow its build → publish → assign steps.
    Decide grouping now, while writing the source: `.group(...)` lives in the code, so
    it cannot be added after the build. See [Node Groups](#node-groups) for the
    criteria, and reach a decision either way — groups declared, or this workflow does
-   not warrant them.
+   not warrant them. When the canvas will be over the ceiling and no valid group can hold
+   the remaining nodes, pass `groupingDecision: 'not_warranted'` with a `groupingReason`
+   to `build-workflow`; without groups or that reason the build is refused.
 7. Before the first `build-workflow` (and again after substantive edits), run
    SDK validation on the workspace source file via
    `workspace_execute_command`:
@@ -901,9 +903,10 @@ store its own public endpoint.
 Do not report a build as done until you have made the grouping decision described in
 [Node Groups](#node-groups) and checked what the build did with it. A dropped-group warning
 names what was invalid — a duplicate name, a member that does not exist, a boundary the rules
-reject: fix what the warning reports and build again. If the top level is still above 7
-items, name each remaining item and why it cannot join a group — if you cannot, group it and
-build again.
+reject: fix what the warning reports and build again. A `GROUPING_DECISION_MISSING` or
+`ALL_GROUPS_DROPPED` error means the build was refused: fix the source, or pass the opt-out
+with a reason. If the top level is still above the ceiling with groups in place, name each
+remaining item and why it cannot join a group.
 
 For a successful build, finish with one concise sentence naming the workflow and
 what changed. Include the workflow ID when it is available. If setup is
