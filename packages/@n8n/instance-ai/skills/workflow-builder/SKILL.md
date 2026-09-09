@@ -903,9 +903,10 @@ store its own public endpoint.
 Do not report a build as done until you have made the grouping decision described in
 [Node Groups](#node-groups) and checked what the build did with it. A dropped-group warning
 names what was invalid — a duplicate name, a member that does not exist, a boundary the rules
-reject: fix what the warning reports and build again. A `GROUPING_DECISION_MISSING` or
-`ALL_GROUPS_DROPPED` error means the build was refused: fix the source, or pass the opt-out
-with a reason. If the top level is still above the ceiling with groups in place, name each
+reject: fix what the warning reports and build again. A `GROUPING_DECISION_MISSING` error means
+the build was refused: fix the source, or pass the opt-out with a reason. An `ALL_GROUPS_DROPPED`
+error also refuses the build: fix the boundaries the dropped-group warnings name — the opt-out
+does not apply. If the top level is still above the ceiling with groups in place, name each
 remaining item and why it cannot join a group.
 
 For a successful build, finish with one concise sentence naming the workflow and
