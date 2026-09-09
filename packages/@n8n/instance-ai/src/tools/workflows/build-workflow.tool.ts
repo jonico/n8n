@@ -397,7 +397,7 @@ interface ValidationFailureArgs {
 /**
  * The grouping decision this build ends with, for the result and telemetry.
  *
- * - `grouped`: the agent made groups.
+ * - `grouped`: the agent made groups, even if the save dropped all of them.
  * - `not_warranted`: the agent made no groups and gave a reason.
  * - `under_ceiling`: the canvas has `TOP_LEVEL_ITEM_CEILING` boxes or fewer, so
  *   groups are not needed.
@@ -1137,7 +1137,7 @@ export function createBuildWorkflowTool(context: InstanceAiContext) {
 					groupCount: topLevel.groupCount,
 					droppedGroupCount,
 					decision: resolveGroupingDecision({
-						groupCount: topLevel.groupCount,
+						groupCount: groupCountBeforeDrop,
 						overCeiling: topLevel.overCeiling,
 						groupingDecision,
 					}),
