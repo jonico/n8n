@@ -298,6 +298,7 @@ const details = computed(() => {
 	max-width: calc(var(--spacing--5xl) + var(--spacing--lg));
 	align-items: stretch;
 	white-space: normal;
+	overflow-y: auto;
 }
 
 .content {
